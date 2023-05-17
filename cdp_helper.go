@@ -158,7 +158,7 @@ func (h *CdpHelper) NodeText(sel any, opts ...chromedp.QueryOption) (string, err
 	timeoutCtx, timeoutCancel := context.WithTimeout(h.Current.Context, h.TextTimeout)
 	defer timeoutCancel()
 	var text string
-	err := h.RunWithContext(timeoutCtx, chromedp.Text(sel, &text, opts...))
+	err := chromedp.Run(timeoutCtx, chromedp.Text(sel, &text, opts...))
 	if err != nil {
 		return "", err
 	}
@@ -171,14 +171,14 @@ func (h *CdpHelper) Nodes(sel any, opts ...chromedp.QueryOption) ([]*cdp.Node, e
 	defer timeoutCancel()
 
 	var nodes []*cdp.Node
-	err := h.RunWithContext(timeoutCtx, chromedp.Nodes(sel, &nodes, opts...))
+	err := chromedp.Run(timeoutCtx, chromedp.Nodes(sel, &nodes, opts...))
 
 	if err != nil {
 		return nil, err
 	}
 
 	for _, node := range nodes {
-		err = h.RunWithContext(timeoutCtx, dom.RequestChildNodes(node.NodeID).WithDepth(-1).WithPierce(false))
+		err = chromedp.Run(timeoutCtx, dom.RequestChildNodes(node.NodeID).WithDepth(-1).WithPierce(false))
 		if err != nil {
 			return nil, err
 		}
@@ -300,6 +300,8 @@ func (h *CdpHelper) Run(actions ...chromedp.Action) error {
 	return chromedp.Run(h.Current.Context, actions...)
 }
 
-func (h *CdpHelper) RunWithContext(ctx context.Context, actions ...chromedp.Action) error {
-	return chromedp.Run(ctx, actions...)
+func (h *CdpHelper) RunWithTimeout(t time.Duration, actions ...chromedp.Action) error {
+	timeoutCtx, timeoutCancel := context.WithTimeout(h.Current.Context, t)
+	defer timeoutCancel()
+	return chromedp.Run(timeoutCtx, actions...)
 }
