@@ -91,6 +91,8 @@ run:
 			}
 		}
 	}
+
+	job.Post(&scheduler.args)
 	return true
 }
 
