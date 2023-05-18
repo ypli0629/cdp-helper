@@ -305,3 +305,7 @@ func (h *CdpHelper) RunWithTimeout(t time.Duration, actions ...chromedp.Action) 
 	defer timeoutCancel()
 	return chromedp.Run(timeoutCtx, actions...)
 }
+
+func (h *CdpHelper) Tasks(actions ...chromedp.Action) error {
+	return h.Run(actions...)
+}
