@@ -187,24 +187,17 @@ func (h *CdpHelper) Nodes(sel any, opts ...chromedp.QueryOption) ([]*cdp.Node, e
 	return nodes, err
 }
 
-func (h *CdpHelper) ChildNodeText(node *cdp.Node, cssSel string) (string, error) {
+func (h *CdpHelper) ChildNodeText(parent *cdp.Node, cssSel string) (string, error) {
 	timeoutCtx, timeoutCancel := context.WithTimeout(h.Current.Context, h.TextTimeout)
 	defer timeoutCancel()
-	c := chromedp.FromContext(h.Current.Context)
-	executor := cdp.WithExecutor(timeoutCtx, c.Target)
-	var nodeID cdp.NodeID
-	var err error
-	if cssSel != "" {
-		nodeID, err = dom.QuerySelector(node.NodeID, cssSel).Do(executor)
-		if err != nil {
-			return "", err
-		}
-	} else {
-		nodeID = node.NodeID
+
+	executor, childNodeID, err := h.ChildNode(timeoutCtx, parent.NodeID, cssSel)
+	if err != nil {
+		return "", err
 	}
 
 	var text string
-	err = chromedp.Text([]cdp.NodeID{nodeID}, &text, chromedp.ByNodeID).Do(executor)
+	err = chromedp.Text([]cdp.NodeID{childNodeID}, &text, chromedp.ByNodeID).Do(executor)
 	if err != nil {
 		return "", err
 	}
@@ -226,19 +219,17 @@ func (h *CdpHelper) Download(path string, isNewTarget bool) (*chan string, conte
 		}
 	}
 
-	c := chromedp.FromContext(h.Current.Context)
-
 	var executor context.Context
 	if isNewTarget {
 		chromedp.ListenBrowser(timeoutCtx, func(ev interface{}) {
 			listenEvent(ev)
 		})
-		executor = cdp.WithExecutor(h.Current.Context, c.Browser)
+		executor = h.NewBrowserExecutor(h.Current.Context)
 	} else {
 		chromedp.ListenTarget(timeoutCtx, func(ev interface{}) {
 			listenEvent(ev)
 		})
-		executor = cdp.WithExecutor(h.Current.Context, c.Target)
+		executor = h.NewTargetExecutor(h.Current.Context)
 	}
 
 	err := browser.SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllowAndName).
@@ -254,6 +245,23 @@ func (h *CdpHelper) Download(path string, isNewTarget bool) (*chan string, conte
 
 func (h *CdpHelper) Click(sel any, opts ...chromedp.QueryOption) error {
 	return h.Run(chromedp.Click(sel, opts...))
+}
+
+func (h *CdpHelper) ClickChild(parent *cdp.Node, cssSel string, opts ...chromedp.MouseOption) error {
+	timeoutCtx, timeoutCancel := context.WithTimeout(h.Current.Context, h.Timeout)
+	defer timeoutCancel()
+	executor, childNodeID, err := h.ChildNode(timeoutCtx, parent.NodeID, cssSel)
+	if err != nil {
+		return err
+	}
+
+	var childNode *cdp.Node
+	childNode, err = dom.DescribeNode().WithNodeID(childNodeID).Do(executor)
+	if err != nil {
+		return nil
+	}
+
+	return h.Run(chromedp.MouseClickNode(childNode, opts...))
 }
 
 func (h *CdpHelper) SendKeys(sel any, v string, opts ...chromedp.QueryOption) error {
@@ -308,4 +316,32 @@ func (h *CdpHelper) RunWithTimeout(t time.Duration, actions ...chromedp.Action) 
 
 func (h *CdpHelper) Tasks(actions ...chromedp.Action) error {
 	return h.Run(actions...)
+}
+
+func (h *CdpHelper) ChildNode(ctx context.Context, parent cdp.NodeID, cssSel string) (context.Context, cdp.NodeID, error) {
+	executor := h.NewTargetExecutor(ctx)
+	var nodeID cdp.NodeID
+	var err error
+	if cssSel != "" {
+		nodeID, err = dom.QuerySelector(parent, cssSel).Do(executor)
+		if err != nil {
+			return nil, 0, err
+		}
+	} else {
+		nodeID = parent
+	}
+
+	return executor, nodeID, nil
+}
+
+func (h *CdpHelper) NewBrowserExecutor(ctx context.Context) context.Context {
+	c := chromedp.FromContext(h.Current.Context)
+	executor := cdp.WithExecutor(ctx, c.Browser)
+	return executor
+}
+
+func (h *CdpHelper) NewTargetExecutor(ctx context.Context) context.Context {
+	c := chromedp.FromContext(h.Current.Context)
+	executor := cdp.WithExecutor(ctx, c.Target)
+	return executor
 }
