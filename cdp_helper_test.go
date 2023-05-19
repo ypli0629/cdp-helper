@@ -102,3 +102,17 @@ func TestCdpHelper_DownloadBrowser(t *testing.T) {
 	}
 	assert.Nil(t, err)
 }
+
+func TestCdpHelper_HasChildNode(t *testing.T) {
+	b := NewBrowser()
+	err := b.Navigate(`https://github.com/chromedp/examples`)
+	assert.Nil(t, err)
+	nodes, err := b.Nodes(`//*[@id="repository-container-header"]/div[1]/div[1]/div/strong`)
+	assert.Nil(t, err)
+	nodeID, has := b.HasChildNode(nodes[0], `a`)
+	assert.True(t, has)
+	assert.NotZero(t, nodeID)
+	nodeID, has = b.HasChildNode(nodes[0], `a1`)
+	assert.False(t, has)
+	assert.Zero(t, nodeID)
+}

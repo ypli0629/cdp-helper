@@ -2,6 +2,7 @@ package cdp_helper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/chromedp/cdproto/browser"
 	"github.com/chromedp/cdproto/cdp"
@@ -336,11 +337,24 @@ func (h *CdpHelper) ChildNode(ctx context.Context, parent cdp.NodeID, cssSel str
 		if err != nil {
 			return nil, 0, err
 		}
+		if nodeID == cdp.EmptyNodeID {
+			return nil, 0, errors.New("empty nodeID")
+		}
 	} else {
 		nodeID = parent
 	}
 
 	return executor, nodeID, nil
+}
+
+func (h *CdpHelper) HasChildNode(parent *cdp.Node, cssSel string) (cdp.NodeID, bool) {
+	timeoutCtx, timeoutCancel := context.WithTimeout(h.Current.Context, h.Timeout)
+	defer timeoutCancel()
+	_, nodeID, err := h.ChildNode(timeoutCtx, parent.NodeID, cssSel)
+	if err != nil {
+		return 0, false
+	}
+	return nodeID, true
 }
 
 func (h *CdpHelper) NewBrowserExecutor(ctx context.Context) context.Context {
