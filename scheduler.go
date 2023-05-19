@@ -28,7 +28,7 @@ type Scheduler struct {
 	Timeout           time.Duration
 }
 
-func (scheduler *Scheduler) schedule(job Job) bool {
+func (scheduler *Scheduler) Schedule(job Job) bool {
 	args, ok := job.Prev()
 	if !ok {
 		if scheduler.PrevRetry {

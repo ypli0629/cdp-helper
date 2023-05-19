@@ -39,5 +39,5 @@ func (j *testJob) Post(args *[]Arg) {
 func TestScheduler_schedule(t *testing.T) {
 	sch := NewScheduler()
 	var job testJob
-	sch.schedule(&job)
+	sch.Schedule(&job)
 }
