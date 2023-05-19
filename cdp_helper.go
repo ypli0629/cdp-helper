@@ -187,6 +187,15 @@ func (h *CdpHelper) Nodes(sel any, opts ...chromedp.QueryOption) ([]*cdp.Node, e
 	return nodes, err
 }
 
+func (h *CdpHelper) ChildNodes(parent *cdp.Node, cssSel string) ([]cdp.NodeID, error) {
+	executor := h.NewTargetExecutor(h.Current.Context)
+	nodeIDs, err := dom.QuerySelectorAll(parent.NodeID, cssSel).Do(executor)
+	if err != nil {
+		return nil, err
+	}
+	return nodeIDs, nil
+}
+
 func (h *CdpHelper) ChildNodeText(parent *cdp.Node, cssSel string) (string, error) {
 	timeoutCtx, timeoutCancel := context.WithTimeout(h.Current.Context, h.TextTimeout)
 	defer timeoutCancel()
