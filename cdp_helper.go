@@ -51,11 +51,11 @@ func (*DefaultLogger) Logf(format string, args ...any) {
 	log.Printf(format, args...)
 }
 
-func NewBrowser() *CdpHelper {
+func NewBrowser(headless bool) *CdpHelper {
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.DisableGPU,
 		chromedp.Flag("disable-popup-blocking", true),
-		chromedp.Flag("headless", true))
+		chromedp.Flag("headless", headless))
 
 	allocator, allocatorCancel := chromedp.NewExecAllocator(context.Background(), opts...)
 	browserContext, browserCancel := chromedp.NewContext(allocator)
