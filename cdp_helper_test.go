@@ -11,7 +11,7 @@ import (
 )
 
 func TestCdpHelper_NewBlankTab(t *testing.T) {
-	b := NewBrowser()
+	b := NewBrowser(true)
 	err := b.Navigate("https://www.baidu.com")
 	assert.Nil(t, err)
 	nh, err := b.NewBlankTab("")
@@ -24,45 +24,46 @@ func TestCdpHelper_NewBlankTab(t *testing.T) {
 }
 
 func TestCdpHelper_Navigate(t *testing.T) {
-	err := NewBrowser().Navigate("https://www.baidu.com")
+	err := NewBrowser(true).Navigate("https://www.baidu.com")
 	assert.Nil(t, err)
 }
 
 func TestCdpHelper_Nodes(t *testing.T) {
-	b := NewBrowser()
+	b := NewBrowser(true)
 	err := b.Navigate("https://www.baidu.com")
 	assert.Nil(t, err)
 	nodes, err := b.Nodes(`//*[@id="hotsearch-content-wrapper"]/li`)
 	assert.Nil(t, err)
 	assert.Greater(t, len(nodes), 0)
 	assert.Equal(t, len(nodes[0].Children), int(nodes[0].ChildNodeCount))
+	assert.Equal(t, len(nodes[0].Children[0].Children), int(nodes[0].Children[0].ChildNodeCount))
 }
 
 func TestCdpHelper_NodeText(t *testing.T) {
-	b := NewBrowser()
+	b := NewBrowser(true)
 	err := b.Navigate("https://www.baidu.com")
 	assert.Nil(t, err)
-	text, err := b.NodeText(`//*[@id="s-top-left"]/a[1]`)
+	text, err := b.NodeTextContent(`//*[@id="s-top-left"]/a[1]`)
 	assert.Nil(t, err)
 	assert.NotEmpty(t, text)
 }
 
 func TestCdpHelper_ChildNodeText(t *testing.T) {
-	b := NewBrowser()
+	b := NewBrowser(true)
 	err := b.Navigate("https://www.baidu.com")
 	assert.Nil(t, err)
 	nodes, err := b.Nodes(`//*[@id="hotsearch-content-wrapper"]/li`)
 	assert.Nil(t, err)
 	for _, node := range nodes {
 		var text string
-		text, err = b.ChildNodeText(node, `a > span.title-content-title`)
+		text, err = b.ChildNodeTextContent(node, `a > span.title-content-title`)
 		assert.Nil(t, err)
 		assert.NotEmpty(t, text)
 	}
 }
 
 func TestCdpHelper_Download(t *testing.T) {
-	b := NewBrowser()
+	b := NewBrowser(true)
 	err := b.Navigate("https://github.com/chromedp/examples")
 	assert.Nil(t, err)
 	err = b.Click(`//get-repo//summary`, chromedp.NodeReady)
@@ -83,7 +84,7 @@ func TestCdpHelper_Download(t *testing.T) {
 }
 
 func TestCdpHelper_DownloadBrowser(t *testing.T) {
-	b := NewBrowser()
+	b := NewBrowser(true)
 	err := b.Navigate("https://github.com/chromedp/examples")
 	assert.Nil(t, err)
 	err = b.Click(`//get-repo//summary`, chromedp.NodeReady)
@@ -104,7 +105,7 @@ func TestCdpHelper_DownloadBrowser(t *testing.T) {
 }
 
 func TestCdpHelper_HasChildNode(t *testing.T) {
-	b := NewBrowser()
+	b := NewBrowser(true)
 	err := b.Navigate(`https://github.com/chromedp/examples`)
 	assert.Nil(t, err)
 	nodes, err := b.Nodes(`//*[@id="repository-container-header"]/div[1]/div[1]/div/strong`)

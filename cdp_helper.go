@@ -155,11 +155,11 @@ func (h *CdpHelper) Navigate(url string) error {
 	return h.Run(chromedp.Navigate(url))
 }
 
-func (h *CdpHelper) NodeText(sel any, opts ...chromedp.QueryOption) (string, error) {
+func (h *CdpHelper) NodeTextContent(sel any, opts ...chromedp.QueryOption) (string, error) {
 	timeoutCtx, timeoutCancel := context.WithTimeout(h.Current.Context, h.TextTimeout)
 	defer timeoutCancel()
 	var text string
-	err := chromedp.Run(timeoutCtx, chromedp.Text(sel, &text, opts...))
+	err := chromedp.Run(timeoutCtx, chromedp.TextContent(sel, &text, opts...))
 	if err != nil {
 		return "", err
 	}
@@ -179,7 +179,7 @@ func (h *CdpHelper) Nodes(sel any, opts ...chromedp.QueryOption) ([]*cdp.Node, e
 	}
 
 	for _, node := range nodes {
-		err = chromedp.Run(timeoutCtx, dom.RequestChildNodes(node.NodeID).WithDepth(-1).WithPierce(false))
+		err = chromedp.Run(timeoutCtx, dom.RequestChildNodes(node.NodeID).WithDepth(-1).WithPierce(true))
 		if err != nil {
 			return nil, err
 		}
@@ -197,7 +197,7 @@ func (h *CdpHelper) ChildNodes(parent *cdp.Node, cssSel string) ([]cdp.NodeID, e
 	return nodeIDs, nil
 }
 
-func (h *CdpHelper) ChildNodeText(parent *cdp.Node, cssSel string) (string, error) {
+func (h *CdpHelper) ChildNodeTextContent(parent *cdp.Node, cssSel string) (string, error) {
 	timeoutCtx, timeoutCancel := context.WithTimeout(h.Current.Context, h.TextTimeout)
 	defer timeoutCancel()
 
@@ -207,7 +207,7 @@ func (h *CdpHelper) ChildNodeText(parent *cdp.Node, cssSel string) (string, erro
 	}
 
 	var text string
-	err = chromedp.Text([]cdp.NodeID{childNodeID}, &text, chromedp.ByNodeID).Do(executor)
+	err = chromedp.TextContent([]cdp.NodeID{childNodeID}, &text, chromedp.ByNodeID).Do(executor)
 	if err != nil {
 		return "", err
 	}
@@ -270,6 +270,7 @@ func (h *CdpHelper) ClickChild(parent *cdp.Node, cssSel string, opts ...chromedp
 	if err != nil {
 		return nil
 	}
+	childNode.NodeID = childNodeID
 
 	return h.Run(chromedp.MouseClickNode(childNode, opts...))
 }
