@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/chromedp/cdproto/browser"
 	"github.com/chromedp/cdproto/cdp"
+	"github.com/chromedp/cdproto/css"
 	"github.com/chromedp/cdproto/dom"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/cdproto/target"
@@ -356,6 +357,25 @@ func (h *CdpHelper) HasChildNode(parent *cdp.Node, cssSel string) (cdp.NodeID, b
 		return 0, false
 	}
 	return nodeID, true
+}
+
+func (h *CdpHelper) ComputedStyle(sel any, opts ...chromedp.QueryOption) (map[string]string, error) {
+	timeoutCtx, timeoutCancel := context.WithTimeout(h.Current.Context, h.Timeout)
+	defer timeoutCancel()
+	executor := h.NewTargetExecutor(timeoutCtx)
+
+	var styles []*css.ComputedStyleProperty
+	err := chromedp.ComputedStyle(sel, &styles, opts...).Do(executor)
+	if err != nil {
+		return nil, err
+	}
+
+	style := make(map[string]string)
+	for _, item := range styles {
+		style[item.Name] = item.Value
+	}
+
+	return style, nil
 }
 
 func (h *CdpHelper) NewBrowserExecutor(ctx context.Context) context.Context {

@@ -2,6 +2,7 @@ package cdp_helper
 
 import (
 	"context"
+	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -116,4 +117,30 @@ func TestCdpHelper_HasChildNode(t *testing.T) {
 	nodeID, has = b.HasChildNode(nodes[0], `a1`)
 	assert.False(t, has)
 	assert.Zero(t, nodeID)
+}
+
+func TestChildNode(t *testing.T) {
+	b := NewBrowser(true)
+	err := b.Navigate(`https://element.eleme.cn/#/zh-CN/component/select`)
+	assert.Nil(t, err)
+	err = b.Click(`//*[@id="app"]/div[2]/div/div[1]/div/div/div[2]/section/div[1]/div[1]/div/div`)
+	assert.Nil(t, err)
+	err = b.Sleep(3 * time.Second)
+	assert.Nil(t, err)
+	nodes, err := b.Nodes(`div.el-select-dropdown`)
+	assert.Nil(t, err)
+	err = b.Sleep(3 * time.Second)
+	assert.Nil(t, err)
+	var exist bool
+	for _, node := range nodes {
+		style, err := b.ComputedStyle([]cdp.NodeID{node.NodeID}, chromedp.ByNodeID)
+		assert.Nil(t, err)
+		if v, ok := style["display"]; ok {
+			t.Log(v)
+			if v != "none" {
+				exist = true
+			}
+		}
+	}
+	assert.True(t, exist)
 }
