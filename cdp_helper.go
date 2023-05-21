@@ -12,6 +12,8 @@ import (
 	"github.com/chromedp/cdproto/target"
 	"github.com/chromedp/chromedp"
 	"log"
+	"os"
+	"path"
 	"time"
 )
 
@@ -26,9 +28,10 @@ type CdpHelper struct {
 	Browser   ContextWithCancel
 	Current   *ContextWithCancel
 
-	Timeout         time.Duration
-	TextTimeout     time.Duration
-	DownloadTimeout time.Duration
+	Timeout          time.Duration
+	TextTimeout      time.Duration
+	DownloadTimeout  time.Duration
+	EnableScreenshot bool
 }
 
 type Logger interface {
@@ -103,6 +106,7 @@ func (h *CdpHelper) setDefault() {
 	h.Timeout = 3 * time.Second
 	h.TextTimeout = 1 * time.Second
 	h.DownloadTimeout = 10 * time.Second
+	h.EnableScreenshot = true
 }
 
 func (h *CdpHelper) WithTimeout(timeout time.Duration) {
@@ -376,6 +380,23 @@ func (h *CdpHelper) ComputedStyle(sel any, opts ...chromedp.QueryOption) (map[st
 	}
 
 	return style, nil
+}
+
+func (h *CdpHelper) ScreenShot(dir string, filename string) error {
+	return h.Run(chromedp.ActionFunc(func(ctx context.Context) error {
+		var data []byte
+		err := chromedp.CaptureScreenshot(&data).Do(ctx)
+		if err != nil {
+			return err
+		}
+
+		err = os.WriteFile(path.Join(dir, filename), data, 0644)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}))
 }
 
 func (h *CdpHelper) NewBrowserExecutor(ctx context.Context) context.Context {

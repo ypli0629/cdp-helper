@@ -144,3 +144,11 @@ func TestChildNode(t *testing.T) {
 	}
 	assert.True(t, exist)
 }
+
+func TestCdpHelper_ScreenShot(t *testing.T) {
+	b := NewBrowser(true)
+	err := b.Navigate("https://www.baidu.com")
+	assert.Nil(t, err)
+	err = b.ScreenShot("", "baidu.png")
+	assert.Nil(t, err)
+}
