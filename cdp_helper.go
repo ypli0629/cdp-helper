@@ -220,7 +220,7 @@ func (h *CdpHelper) ChildNodeTextContent(parent *cdp.Node, cssSel string) (strin
 	return text, nil
 }
 
-func (h *CdpHelper) Download(path string, isNewTarget bool) (*chan string, context.Context, error) {
+func (h *CdpHelper) Download(path string, isNewTarget bool) (*chan string, context.Context, func(), error) {
 	done := make(chan string, 1)
 
 	timeoutCtx, timeoutCancel := context.WithTimeout(h.Current.Context, h.DownloadTimeout)
@@ -228,8 +228,6 @@ func (h *CdpHelper) Download(path string, isNewTarget bool) (*chan string, conte
 		if v, ok := ev.(*browser.EventDownloadProgress); ok {
 			if v.State == browser.DownloadProgressStateCompleted {
 				done <- v.GUID
-				close(done)
-				timeoutCancel()
 			}
 		}
 	}
@@ -252,10 +250,16 @@ func (h *CdpHelper) Download(path string, isNewTarget bool) (*chan string, conte
 		WithEventsEnabled(true).
 		Do(executor)
 	if err != nil {
-		return nil, nil, err
+		timeoutCancel()
+		return nil, nil, nil, err
 	}
 
-	return &done, timeoutCtx, nil
+	cancel := func() {
+		close(done)
+		timeoutCancel()
+	}
+
+	return &done, timeoutCtx, cancel, nil
 }
 
 func (h *CdpHelper) Click(sel any, opts ...chromedp.QueryOption) error {
