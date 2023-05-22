@@ -139,6 +139,18 @@ func TestChildNode(t *testing.T) {
 			t.Log(v)
 			if v != "none" {
 				exist = true
+				childNodes, err := b.ChildNodes(node, `ul > li`)
+				assert.Nil(t, err)
+				for _, childNode := range childNodes {
+					content, err := b.ChildNodeTextContent(&cdp.Node{NodeID: childNode}, `span`)
+					assert.Nil(t, err)
+					if content == "龙须面" {
+						err := b.Click([]cdp.NodeID{childNode}, chromedp.ByNodeID)
+						assert.Nil(t, err)
+						b.Sleep(3 * time.Second)
+						b.ScreenShot("", "龙须面.png")
+					}
+				}
 			}
 		}
 	}

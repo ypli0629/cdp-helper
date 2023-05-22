@@ -384,6 +384,9 @@ func (h *CdpHelper) ComputedStyle(sel any, opts ...chromedp.QueryOption) (map[st
 
 func (h *CdpHelper) ScreenShot(dir string, filename string) error {
 	return h.Run(chromedp.ActionFunc(func(ctx context.Context) error {
+		if !h.EnableScreenshot {
+			return nil
+		}
 		var data []byte
 		err := chromedp.CaptureScreenshot(&data).Do(ctx)
 		if err != nil {
