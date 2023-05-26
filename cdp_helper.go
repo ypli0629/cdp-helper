@@ -406,6 +406,10 @@ func (h *CdpHelper) ScreenShot(dir string, filename string) error {
 	}))
 }
 
+func (h *CdpHelper) Upload(sel any, files []string, opts ...chromedp.QueryOption) error {
+	return h.Run(chromedp.SetUploadFiles(sel, files, opts...))
+}
+
 func (h *CdpHelper) NewBrowserExecutor(ctx context.Context) context.Context {
 	c := chromedp.FromContext(h.Current.Context)
 	executor := cdp.WithExecutor(ctx, c.Browser)

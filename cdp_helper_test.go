@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -164,5 +165,19 @@ func TestCdpHelper_ScreenShot(t *testing.T) {
 	err := b.Navigate("https://www.baidu.com")
 	assert.Nil(t, err)
 	err = b.ScreenShot("", "baidu.png")
+	assert.Nil(t, err)
+}
+
+func TestCdpHelper_Upload(t *testing.T) {
+	b := NewBrowser(true)
+	err := b.Navigate("https://element.eleme.cn/#/zh-CN/component/upload")
+	assert.Nil(t, err)
+	err = b.WaitReady(`//*[@id="app"]/div[2]/div/div[1]/div/div/div[2]/section/div[1]/div[1]/div/div/div[1]/input`)
+	assert.Nil(t, err)
+	fp, err := filepath.Abs("./go.mod")
+	assert.Nil(t, err)
+	err = b.Upload(`//*[@id="app"]/div[2]/div/div[1]/div/div/div[2]/section/div[1]/div[1]/div/div/div[1]/input`, []string{fp})
+	assert.Nil(t, err)
+	err = b.Sleep(6 * time.Second)
 	assert.Nil(t, err)
 }
