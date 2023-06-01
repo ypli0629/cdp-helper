@@ -421,3 +421,7 @@ func (h *CdpHelper) NewTargetExecutor(ctx context.Context) context.Context {
 	executor := cdp.WithExecutor(ctx, c.Target)
 	return executor
 }
+
+func (h *CdpHelper) WaitReadyWithTimeout(timeout time.Duration, sel any, opts ...chromedp.QueryOption) error {
+	return h.RunWithTimeout(timeout, chromedp.WaitReady(sel, opts...))
+}
