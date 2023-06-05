@@ -15,12 +15,12 @@ type Job interface {
 
 type Scheduler struct {
 	args              []Arg
-	PrevRetry         bool
-	PrevRetryTimes    int
-	PrevRetryInterval time.Duration
-	ErrRetry          bool
-	ErrRetryTimes     int
-	Concurrent        bool
+	PrevRetry         bool          // whether retry in prev phase
+	PrevRetryTimes    int           // prev phase retry times
+	PrevRetryInterval time.Duration // prev phase retry interval
+	ErrRetry          bool          // whether retry when error occur
+	ErrRetryTimes     int           // retry times when error occur
+	Concurrent        bool          // execute do function concurrently
 	WaitStep          int
 	Done              chan any
 	step              int
@@ -29,6 +29,7 @@ type Scheduler struct {
 }
 
 func (scheduler *Scheduler) Schedule(job Job) bool {
+	// prev phase
 	args, ok := job.Prev()
 	if !ok {
 		if scheduler.PrevRetry {
@@ -43,6 +44,7 @@ func (scheduler *Scheduler) Schedule(job Job) bool {
 			return false
 		}
 	}
+	// do phase
 run:
 	var stepWaitGroup sync.WaitGroup
 	for _, arg := range args {
@@ -76,8 +78,19 @@ run:
 			}
 		}
 	}
-	stepWaitGroup.Wait()
 
+	// do until timeout
+	go func() {
+		stepWaitGroup.Wait()
+		scheduler.Done <- struct{}{}
+	}()
+
+	select {
+	case <-scheduler.Done:
+	case <-time.NewTimer(scheduler.Timeout).C:
+	}
+
+	// error retry
 	if scheduler.ErrRetry {
 		for i := 0; i < scheduler.ErrRetryTimes; i++ {
 			executedArgs := make([]Arg, len(scheduler.errArgs))
@@ -92,6 +105,7 @@ run:
 		}
 	}
 
+	// post phase
 	job.Post(&scheduler.args)
 	return true
 }
