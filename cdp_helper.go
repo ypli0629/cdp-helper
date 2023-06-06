@@ -37,7 +37,6 @@ type CdpHelper struct {
 type Logger interface {
 	Errorf(string, ...any)
 	Debugf(string, ...any)
-	Logf(string, ...any)
 }
 
 type DefaultLogger struct {
