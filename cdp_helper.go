@@ -81,9 +81,19 @@ func NewBrowser(headless bool) *CdpHelper {
 	return &helper
 }
 
-func NewRemoteBrowser(url string) *CdpHelper {
-	remoteAllocator, remoteAllocatorCancel := chromedp.NewRemoteAllocator(context.Background(), url)
-	remoteBrowserContext, remoteBrowserCancel := chromedp.NewContext(remoteAllocator)
+type RemoteBrowserOption struct {
+	URL    string
+	Logger Logger
+}
+
+func NewRemoteBrowser(option RemoteBrowserOption) *CdpHelper {
+	remoteAllocator, remoteAllocatorCancel := chromedp.NewRemoteAllocator(context.Background(), option.URL)
+	var opts []chromedp.ContextOption
+	if option.Logger != nil {
+		opts = append(opts, chromedp.WithErrorf(option.Logger.Errorf))
+		opts = append(opts, chromedp.WithDebugf(option.Logger.Debugf))
+	}
+	remoteBrowserContext, remoteBrowserCancel := chromedp.NewContext(remoteAllocator, opts...)
 
 	helper := CdpHelper{
 		Allocator: ContextWithCancel{
