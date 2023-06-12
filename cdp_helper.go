@@ -169,6 +169,10 @@ func (h *CdpHelper) Navigate(url string) error {
 	return h.Run(chromedp.Navigate(url))
 }
 
+func (h *CdpHelper) NavigateWithTimeout(url string, timeout time.Duration) error {
+	return h.RunWithTimeout(timeout, chromedp.Navigate(url))
+}
+
 func (h *CdpHelper) NodeTextContent(sel any, opts ...chromedp.QueryOption) (string, error) {
 	timeoutCtx, timeoutCancel := context.WithTimeout(h.Current.Context, h.TextTimeout)
 	defer timeoutCancel()
