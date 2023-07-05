@@ -169,15 +169,32 @@ func TestCdpHelper_ScreenShot(t *testing.T) {
 }
 
 func TestCdpHelper_Upload(t *testing.T) {
+	//b := NewRemoteBrowser(RemoteBrowserOption{URL: "ws://127.0.0.1:9222", Logger: &DefaultLogger{}})
 	b := NewBrowser(true)
-	err := b.Navigate("https://element.eleme.cn/#/zh-CN/component/upload")
+	_ = b.Navigate("")
+	_ = b.NavigateWithTimeout("https://element.eleme.cn/#/zh-CN/component/upload", 3*time.Second)
+	err := b.WaitReady(`//*[@id="app"]/div[2]/div/div[1]/div/div/div[2]/section/div[1]/div[1]/div/div/div[1]/input`)
 	assert.Nil(t, err)
-	err = b.WaitReady(`//*[@id="app"]/div[2]/div/div[1]/div/div/div[2]/section/div[1]/div[1]/div/div/div[1]/input`)
+	fp, err := filepath.Abs("/downloads/笔记.txt")
+	//fp, err := filepath.Abs("/home/ypli/Downloads/test.txt")
 	assert.Nil(t, err)
-	fp, err := filepath.Abs("./go.mod")
-	assert.Nil(t, err)
+	_ = b.ScreenShot("./images", "upload.png")
 	err = b.Upload(`//*[@id="app"]/div[2]/div/div[1]/div/div/div[2]/section/div[1]/div[1]/div/div/div[1]/input`, []string{fp})
 	assert.Nil(t, err)
 	err = b.Sleep(6 * time.Second)
+	_ = b.ScreenShot("./images", "uploaded.png")
 	assert.Nil(t, err)
+}
+
+func TestCdpHelper_ListenRequest(t *testing.T) {
+	b := NewBrowser(true)
+	ch := b.ListenRequest("/sugrec")
+	b.Navigate("https://www.baidu.com")
+	select {
+	case <-time.NewTimer(5 * time.Second).C:
+		assert.Fail(t, "timeout")
+	case data := <-ch:
+		print(string(data))
+		assert.Greater(t, len(data), 0)
+	}
 }

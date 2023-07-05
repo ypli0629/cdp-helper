@@ -8,12 +8,14 @@ import (
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/css"
 	"github.com/chromedp/cdproto/dom"
+	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/cdproto/target"
 	"github.com/chromedp/chromedp"
 	"log"
 	"os"
 	"path"
+	"strings"
 	"time"
 )
 
@@ -437,4 +439,36 @@ func (h *CdpHelper) NewTargetExecutor(ctx context.Context) context.Context {
 
 func (h *CdpHelper) WaitReadyWithTimeout(timeout time.Duration, sel any, opts ...chromedp.QueryOption) error {
 	return h.RunWithTimeout(timeout, chromedp.WaitReady(sel, opts...))
+}
+
+func (h *CdpHelper) ListenRequest(uri string) chan []byte {
+	ch := make(chan []byte)
+	var requestID network.RequestID
+	chromedp.ListenTarget(h.Current.Context, func(ev interface{}) {
+		switch ev := ev.(type) {
+		case *network.EventRequestWillBeSent:
+			if strings.Contains(ev.Request.URL, uri) {
+				requestID = ev.RequestID
+			}
+		case *network.EventResponseReceived:
+			if ev.Type == "XHR" && ev.RequestID == requestID {
+				go func(ctx context.Context) {
+					_ = chromedp.ActionFunc(func(ctx context.Context) error {
+						c := chromedp.FromContext(ctx)
+						executor := cdp.WithExecutor(ctx, c.Target)
+						data, err := network.GetResponseBody(requestID).Do(executor)
+						if err != nil {
+							ch <- nil
+						} else {
+							ch <- data
+						}
+						close(ch)
+						return nil
+					}).Do(ctx)
+				}(h.Current.Context)
+
+			}
+		}
+	})
+	return ch
 }
