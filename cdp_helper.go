@@ -60,7 +60,9 @@ func NewBrowser(headless bool) *CdpHelper {
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.DisableGPU,
 		chromedp.Flag("disable-popup-blocking", true),
-		chromedp.Flag("headless", headless))
+		chromedp.Flag("headless", headless),
+		chromedp.WindowSize(1920, 1080),
+	)
 
 	allocator, allocatorCancel := chromedp.NewExecAllocator(context.Background(), opts...)
 	browserContext, browserCancel := chromedp.NewContext(allocator)
@@ -91,8 +93,11 @@ func NewRemoteBrowser(option RemoteBrowserOption) *CdpHelper {
 	remoteAllocator, remoteAllocatorCancel := chromedp.NewRemoteAllocator(context.Background(), option.URL)
 	var opts []chromedp.ContextOption
 	if option.Logger != nil {
-		opts = append(opts, chromedp.WithErrorf(option.Logger.Errorf))
-		opts = append(opts, chromedp.WithDebugf(option.Logger.Debugf))
+		opts = append(opts,
+			chromedp.WithErrorf(option.Logger.Errorf),
+			chromedp.WithDebugf(option.Logger.Debugf),
+		)
+		opts = append(opts)
 	}
 	remoteBrowserContext, remoteBrowserCancel := chromedp.NewContext(remoteAllocator, opts...)
 
@@ -126,6 +131,10 @@ func (h *CdpHelper) WithTimeout(timeout time.Duration) {
 
 func (h *CdpHelper) WithTextTimeout(timeout time.Duration) {
 	h.TextTimeout = timeout
+}
+
+func (h *CdpHelper) FullScreen() error {
+	return h.Run(chromedp.EmulateViewport(1920, 1080))
 }
 
 // NewBlankTab returns a new CdpHelper instance, and CdpHelper.Current points to the new tab

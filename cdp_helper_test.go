@@ -194,7 +194,6 @@ func TestCdpHelper_ListenRequest(t *testing.T) {
 	case <-time.NewTimer(5 * time.Second).C:
 		assert.Fail(t, "timeout")
 	case data := <-ch:
-		print(string(data))
 		assert.Greater(t, len(data), 0)
 	}
 }
